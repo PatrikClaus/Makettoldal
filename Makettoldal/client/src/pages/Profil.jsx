@@ -56,15 +56,17 @@ export default function Profil() {
   const [profilKepUrl, beallitProfilKepUrl] = useState(
     felhasznalo?.profil_kep_url || ""
   );
+  const [ujProfilKep, beallitUjProfilKep] = useState(null);
   const [mentesFolyamatban, beallitMentesFolyamatban] = useState(false);
 
-  useEffect(() => {
-    if (!bejelentkezve) {
-      navigate("/bejelentkezes");
-      return;
-    }
-    betoltKedvencek();
-  }, [bejelentkezve, betoltKedvencek, navigate]);
+useEffect(() => {
+  if (!bejelentkezve) {
+    navigate("/bejelentkezes");
+    return;
+  }
+  betoltKedvencek();
+}, [bejelentkezve, navigate]);
+
 
   useEffect(() => {
     if (felhasznalo) {
@@ -78,20 +80,45 @@ export default function Profil() {
   }
 
   async function kezeliProfilMentese(e) {
-    e.preventDefault();
-    try {
-      beallitMentesFolyamatban(true);
-      await profilFrissites({
-        felhasznalo_nev: nev,
-        profil_kep_url: profilKepUrl,
+  e.preventDefault();
+  try {
+    beallitMentesFolyamatban(true);
+
+    // 1) Név / profil URL frissítése
+    await profilFrissites({
+      felhasznalo_nev: nev,
+      profil_kep_url: profilKepUrl,
+    });
+
+    // 2) Ha van feltöltött kép → külön kérés
+    if (ujProfilKep) {
+      const formData = new FormData();
+      formData.append("profilkep", ujProfilKep);
+
+      const token = localStorage.getItem("token");
+
+      const valasz = await fetch("http://localhost:3001/api/profil/feltoltes", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
       });
-      alert("Profil mentve.");
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      beallitMentesFolyamatban(false);
+
+      const data = await valasz.json();
+      if (data.kepUrl) {
+        beallitProfilKepUrl(data.kepUrl);
+      }
     }
+
+    alert("Profil sikeresen frissítve!");
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    beallitMentesFolyamatban(false);
   }
+}
+
 
   function kezeliKijelentkezes() {
     kijelentkezes();
@@ -135,6 +162,15 @@ export default function Profil() {
               placeholder="https://..."
             />
           </label>
+          <label>
+          Profilkép feltöltése
+           <input
+             type="file"
+             accept="image/*"
+             onChange={(e) => beallitUjProfilKep(e.target.files[0])}
+             />
+            </label>
+
           <div className="button-row">
             <button type="submit" className="btn" disabled={mentesFolyamatban}>
               {mentesFolyamatban ? "Mentés..." : "Profil mentése"}

@@ -3,9 +3,35 @@ import cors from "cors";
 import mysql from "mysql2/promise";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
 
 const PORT = 3001;
 const JWT_TITOK = "nagyon_titkos_jwt_kulcs";
+
+
+// --- PROFILKÉP FELTÖLTÉS --- //
+const uploadDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const nev = "profil_" + req.user.id + "_" + Date.now() + ext;
+    cb(null, nev);
+  },
+});
+
+const upload = multer({ storage });
+
+
 
 const adatbazisPool = mysql.createPool({
   host: "localhost",
@@ -169,6 +195,7 @@ async function inicializalAdatbazis() {
 
 const app = express();
 app.use(cors());
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(express.json());
 
 // AUTH
@@ -576,6 +603,30 @@ app.delete("/api/kedvencek/:makettId", authMiddleware, async (req, res) => {
 app.get("/", (req, res) => {
   res.send("Makett API fut.");
 });
+
+// === PROFILKÉP FELTÖLTÉSE === //
+app.post("/api/profil/feltoltes", authMiddleware, upload.single("profilkep"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ uzenet: "Nincs feltöltött fájl." });
+  }
+
+  const kepUrl = "/uploads/" + req.file.filename;
+
+  try {
+    await adatbazisPool.query(
+      "UPDATE felhasznalo SET profil_kep_url = ? WHERE id = ?",
+      [kepUrl, req.user.id]
+    );
+
+    return res.json({
+      uzenet: "Profilkép frissítve.",
+      kepUrl,
+    });
+  } catch (err) {
+    return res.status(500).json({ uzenet: "Hiba adatbázis mentés közben." });
+  }
+});
+
 
 inicializalAdatbazis()
   .then(() => {

@@ -3,6 +3,32 @@ import { Link } from "react-router-dom";
 import { useAdat } from "../context/AdatContext";
 import { useAuth } from "../context/AuthContext";
 
+
+function CsillagValaszto({ value, onChange }) {
+  const aktivErtek = Number(value) || 0;
+
+  return (
+    <div className="rating-stars">
+      {Array.from({ length: 5 }).map((_, idx) => {
+        const csillagErtek = idx + 1;
+        const aktiv = csillagErtek <= aktivErtek;
+        return (
+          <button
+            type="button"
+            key={idx}
+            className={aktiv ? "star-btn filled" : "star-btn"}
+            onClick={() => onChange(csillagErtek)}
+          >
+            {aktiv ? "★" : "☆"}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+
+
 function Csillagok({ ertek }) {
   const teljes = Math.round(ertek || 0);
   return (
@@ -46,11 +72,12 @@ export default function Makettek() {
 
   const [szerkesztettMakett, beallitSzerkesztettMakett] = useState(null);
 
-  useEffect(() => {
-    if (bejelentkezve) {
-      betoltKedvencek();
-    }
-  }, [bejelentkezve, betoltKedvencek]);
+useEffect(() => {
+  if (bejelentkezve) {
+    betoltKedvencek();
+  }
+}, [bejelentkezve]);
+
 
   const szurtMakettek = useMemo(() => {
     let lista = [...makettek];
@@ -380,71 +407,81 @@ export default function Makettek() {
       )}
 
       <div className="grid">
-        {szurtMakettek.map((m) => {
-          const atlag = szamolAtlagErtekeles(m.id);
-          const kedvenc = kedvencek.includes(m.id);
-          return (
-            <article key={m.id} className="card">
-              <header className="card-header">
-                <h2>{m.nev}</h2>
-                {bejelentkezve && (
-                  <button
-                    className={kedvenc ? "fav-btn active" : "fav-btn"}
-                    type="button"
-                    onClick={() => kezeliKedvencValtas(m.id)}
-                    title={
-                      kedvenc
-                        ? "Eltávolítás a kedvencek közül"
-                        : "Hozzáadás a kedvencekhez"
-                    }
-                  >
-                    {kedvenc ? "❤️" : "🤍"}
-                  </button>
-                )}
-              </header>
-              <p>
-                <strong>Gyártó:</strong> {m.gyarto}
-              </p>
-              <p>
-                <strong>Kategória:</strong> {m.kategoria} –{" "}
-                <strong>Skála:</strong> {m.skala}
-              </p>
-              <p>
-                <strong>Nehézség:</strong> {m.nehezseg} / 5
-              </p>
-              <p>
-                <strong>Megjelenés éve:</strong> {m.megjelenes_eve}
-              </p>
-              <p>
-                <strong>Átlagértékelés:</strong>{" "}
-                {atlag ? (
-                  <>
-                    {atlag.toFixed(1)} <Csillagok ertek={atlag} />
-                  </>
-                ) : (
-                  "még nincs értékelés"
-                )}
-              </p>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => kezeliMegnyitVelemenyek(m.id)}
-              >
-                Vélemények megtekintése
-              </button>
-              {admin && (
+  {betoltesFolyamatban
+    ? Array.from({ length: 3 }).map((_, idx) => (
+        <article key={idx} className="card skeleton">
+          <div className="skeleton-line skeleton-title" />
+          <div className="skeleton-line" />
+          <div className="skeleton-line" />
+          <div className="skeleton-line short" />
+        </article>
+      ))
+    : szurtMakettek.map((m) => {
+        const atlag = szamolAtlagErtekeles(m.id);
+        const kedvenc = kedvencek.includes(m.id);
+        return (
+          <article key={m.id} className="card">
+            <header className="card-header">
+              <h2>{m.nev}</h2>
+              {bejelentkezve && (
                 <button
+                  className={kedvenc ? "fav-btn active" : "fav-btn"}
                   type="button"
-                  className="btn secondary"
-                  onClick={() => kezeliMakettSzerkesztesInditasa(m)}
+                  onClick={() => kezeliKedvencValtas(m.id)}
+                  title={
+                    kedvenc
+                      ? "Eltávolítás a kedvencek közül"
+                      : "Hozzáadás a kedvencekhez"
+                  }
                 >
-                  Makett szerkesztése
+                  {kedvenc ? "❤️" : "🤍"}
                 </button>
               )}
-            </article>
-          );
-        })}
-      </div>
+            </header>
+            <p>
+              <strong>Gyártó:</strong> {m.gyarto}
+            </p>
+            <p>
+              <strong>Kategória:</strong> {m.kategoria} –{" "}
+              <strong>Skála:</strong> {m.skala}
+            </p>
+            <p>
+              <strong>Nehézség:</strong> {m.nehezseg} / 5
+            </p>
+            <p>
+              <strong>Megjelenés éve:</strong> {m.megjelenes_eve}
+            </p>
+            <p>
+              <strong>Átlagértékelés:</strong>{" "}
+              {atlag ? (
+                <>
+                  {atlag.toFixed(1)} <Csillagok ertek={atlag} />
+                </>
+              ) : (
+                "még nincs értékelés"
+              )}
+            </p>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => kezeliMegnyitVelemenyek(m.id)}
+            >
+              Vélemények megtekintése
+            </button>
+            {admin && (
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={() => kezeliMakettSzerkesztesInditasa(m)}
+              >
+                Makett szerkesztése
+              </button>
+            )}
+          </article>
+        );
+      })}
+</div>
+
 
       {aktivMakett && (
         <section className="velemeny-panel">
@@ -471,15 +508,13 @@ export default function Makettek() {
                     >
                       <h3>Vélemény szerkesztése</h3>
                       <label>
-                        Szöveg
-                        <textarea
-                          value={szerkesztettSzoveg}
-                          onChange={(e) =>
-                            beallitSzerkesztettSzoveg(e.target.value)
-                          }
-                          required
-                        />
+                        Értékelés (1–5)
+                        <CsillagValaszto
+                        value={szerkesztettErtekeles}
+                        onChange={(ertek) => beallitSzerkesztettErtekeles(ertek)}
+                          />
                       </label>
+
                       <label>
                         Értékelés (1–5)
                         <input
@@ -548,14 +583,14 @@ export default function Makettek() {
           {bejelentkezve ? (
             <form onSubmit={kezeliUjVelemenyKuldes} className="card form">
               <h3>Új vélemény írása</h3>
-              <label>
-                Szöveg
-                <textarea
-                  value={ujVelemenySzoveg}
-                  onChange={(e) => beallitUjVelemenySzoveg(e.target.value)}
-                  required
-                />
-              </label>
+                <label>
+    Értékelés (1–5)
+    <CsillagValaszto
+      value={ujVelemenyErtekeles}
+      onChange={(ertek) => beallitUjVelemenyErtekeles(ertek)}
+    />
+  </label>
+
               <label>
                 Értékelés (1–5)
                 <input
