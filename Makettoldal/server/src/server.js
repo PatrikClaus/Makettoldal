@@ -48,6 +48,8 @@ async function adatbazisLekeres(sql, parameterek = []) {
   return sorok;
 }
 
+
+
 function generalToken(felhasznalo) {
   const payload = {
     id: felhasznalo.id,
@@ -190,6 +192,30 @@ async function inicializalAdatbazis() {
     );
   }
 
+    await adatbazisLekeres(`
+    CREATE TABLE IF NOT EXISTS forum_tema (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      cim VARCHAR(200) NOT NULL,
+      leiras TEXT NULL,
+      letrehozva DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      felhasznalo_id INT NOT NULL,
+      FOREIGN KEY (felhasznalo_id) REFERENCES felhasznalo(id) ON DELETE CASCADE
+    )
+  `);
+
+  await adatbazisLekeres(`
+    CREATE TABLE IF NOT EXISTS forum_uzenet (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      tema_id INT NOT NULL,
+      felhasznalo_id INT NOT NULL,
+      szoveg TEXT NOT NULL,
+      letrehozva DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (tema_id) REFERENCES forum_tema(id) ON DELETE CASCADE,
+      FOREIGN KEY (felhasznalo_id) REFERENCES felhasznalo(id) ON DELETE CASCADE
+    )
+  `);
+
+
   console.log("Adatbázis inicializálva.");
 }
 
@@ -289,6 +315,118 @@ app.post("/api/auth/login", async (req, res) => {
     res.status(500).json({ uzenet: "Szerver hiba a bejelentkezés során." });
   }
 });
+
+
+// Fórum – témák listázása
+app.get("/api/forum/temak", async (req, res) => {
+  try {
+    const temak = await adatbazisLekeres(
+      `SELECT t.id, t.cim, t.leiras, t.letrehozva,
+              t.felhasznalo_id, f.felhasznalo_nev,
+              COUNT(u.id) AS uzenet_db,
+              MAX(u.letrehozva) AS utolso_valasz
+       FROM forum_tema t
+       JOIN felhasznalo f ON f.id = t.felhasznalo_id
+       LEFT JOIN forum_uzenet u ON u.tema_id = t.id
+       GROUP BY t.id
+       ORDER BY COALESCE(MAX(u.letrehozva), t.letrehozva) DESC`
+    );
+    res.json(temak);
+  } catch (err) {
+    console.error("Fórum témák hiba:", err);
+    res.status(500).json({ uzenet: "Hiba a fórum témák lekérdezésekor." });
+  }
+});
+
+
+// Fórum – új téma létrehozása
+app.post("/api/forum/temak", authMiddleware, async (req, res) => {
+  try {
+    const { cim, leiras } = req.body;
+    if (!cim || cim.trim() === "") {
+      return res.status(400).json({ uzenet: "A cím megadása kötelező." });
+    }
+
+    const felhasznaloId = req.felhasznalo.id;
+
+    const eredmeny = await adatbazisLekeres(
+      `INSERT INTO forum_tema (cim, leiras, felhasznalo_id)
+       VALUES (?, ?, ?)`,
+      [cim.trim(), leiras || null, felhasznaloId]
+    );
+
+    const [uj] = await adatbazisLekeres(
+      `SELECT t.id, t.cim, t.leiras, t.letrehozva,
+              t.felhasznalo_id, f.felhasznalo_nev,
+              0 AS uzenet_db, t.letrehozva AS utolso_valasz
+       FROM forum_tema t
+       JOIN felhasznalo f ON f.id = t.felhasznalo_id
+       WHERE t.id = ?`,
+      [eredmeny.insertId]
+    );
+
+    res.status(201).json(uj);
+  } catch (err) {
+    console.error("Új fórum téma hiba:", err);
+    res.status(500).json({ uzenet: "Hiba a téma létrehozása során." });
+  }
+});
+
+// Fórum – egy téma hozzászólásai
+app.get("/api/forum/temak/:id/uzenetek", async (req, res) => {
+  try {
+    const temaId = Number(req.params.id);
+    const uzenetek = await adatbazisLekeres(
+      `SELECT u.id, u.tema_id, u.felhasznalo_id, u.szoveg, u.letrehozva,
+              f.felhasznalo_nev
+       FROM forum_uzenet u
+       JOIN felhasznalo f ON f.id = u.felhasznalo_id
+       WHERE u.tema_id = ?
+       ORDER BY u.letrehozva ASC`,
+      [temaId]
+    );
+    res.json(uzenetek);
+  } catch (err) {
+    console.error("Fórum üzenetek hiba:", err);
+    res.status(500).json({ uzenet: "Hiba a fórum üzenetek lekérdezésekor." });
+  }
+});
+
+
+// Fórum – új hozzászólás
+app.post("/api/forum/temak/:id/uzenetek", authMiddleware, async (req, res) => {
+  try {
+    const temaId = Number(req.params.id);
+    const { szoveg } = req.body;
+    const felhasznaloId = req.felhasznalo.id;
+
+    if (!szoveg || szoveg.trim() === "") {
+      return res.status(400).json({ uzenet: "Az üzenet szövege kötelező." });
+    }
+
+    const eredmeny = await adatbazisLekeres(
+      `INSERT INTO forum_uzenet (tema_id, felhasznalo_id, szoveg)
+       VALUES (?, ?, ?)`,
+      [temaId, felhasznaloId, szoveg.trim()]
+    );
+
+    const [uj] = await adatbazisLekeres(
+      `SELECT u.id, u.tema_id, u.felhasznalo_id, u.szoveg, u.letrehozva,
+              f.felhasznalo_nev
+       FROM forum_uzenet u
+       JOIN felhasznalo f ON f.id = u.felhasznalo_id
+       WHERE u.id = ?`,
+      [eredmeny.insertId]
+    );
+
+    res.status(201).json(uj);
+  } catch (err) {
+    console.error("Új fórum üzenet hiba:", err);
+    res.status(500).json({ uzenet: "Hiba az üzenet mentése során." });
+  }
+});
+
+
 
 // Profil
 

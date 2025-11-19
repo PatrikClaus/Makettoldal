@@ -1,11 +1,15 @@
 import React from "react";
-import { NavLink, Route, Routes, Link } from "react-router-dom";
+import { Routes, Route, NavLink, Link } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+
 import Kezdolap from "./pages/Kezdolap";
 import Makettek from "./pages/Makettek";
 import Bejelentkezes from "./pages/Bejelentkezes";
 import Regisztracio from "./pages/Regisztracio";
 import Profil from "./pages/Profil";
-import { useAuth } from "./context/AuthContext";
+import Forum from "./pages/Forum"; // ha nincs Forum.jsx, ezt és a route-ot lent töröld
+
+import AiChatWidget from "./components/AiChatWidget";
 
 function generalSzin(nev) {
   if (!nev) return "#4b5563";
@@ -57,12 +61,17 @@ export default function App() {
       <header className="nav">
         <div className="nav-left">
           <span className="logo">Makettező Klub</span>
+
           <NavLink to="/" className="nav-link">
             Kezdőlap
           </NavLink>
           <NavLink to="/makettek" className="nav-link">
             Makettek
           </NavLink>
+          <NavLink to="/forum" className="nav-link">
+            Fórum
+          </NavLink>
+
           {admin && <span className="nav-badge">Admin</span>}
         </div>
 
@@ -102,8 +111,12 @@ export default function App() {
           <Route path="/bejelentkezes" element={<Bejelentkezes />} />
           <Route path="/regisztracio" element={<Regisztracio />} />
           <Route path="/profil" element={<Profil />} />
+          <Route path="/forum" element={<Forum />} />
         </Routes>
       </main>
+
+      {/* Lebegő AI chat minden oldalon */}
+      <AiChatWidget />
     </div>
   );
 }

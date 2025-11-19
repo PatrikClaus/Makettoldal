@@ -1,5 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useAdat } from "../context/AdatContext";
+import { getWebLlmEngine } from "../ai/webllmEngine";
 
 function CsillagokKicsi({ ertek }) {
   const teljes = Math.round(ertek || 0);
@@ -15,6 +16,13 @@ function CsillagokKicsi({ ertek }) {
 export default function Kezdolap() {
   const { makettek, velemenyek, szamolAtlagErtekeles } = useAdat();
 
+  const [aiKerdes, beallitAiKerdes] = useState("");
+  const [aiValasz, beallitAiValasz] = useState("");
+  const [aiBetolt, beallitAiBetolt] = useState(false);
+  const [aiHiba, beallitAiHiba] = useState(null);
+  const [aiModellToltes, beallitAiModellToltes] = useState(false);
+  const [aiModellProgress, beallitAiModellProgress] = useState(0);
+
   const osszesMakett = makettek.length;
   const osszesVelemeny = velemenyek.length;
 
@@ -24,7 +32,6 @@ export default function Kezdolap() {
         velemenyek.length
       : null;
 
-  // Top 3 legjobbra értékelt makett
   const topMakettek = useMemo(() => {
     if (!makettek.length || !velemenyek.length) return [];
 
@@ -40,7 +47,6 @@ export default function Kezdolap() {
     return lista;
   }, [makettek, velemenyek, szamolAtlagErtekeles]);
 
-  // Legutóbbi 3 vélemény
   const legutobbiVelemenyek = useMemo(() => {
     if (!velemenyek.length) return [];
     const masolat = [...velemenyek];
@@ -60,11 +66,70 @@ export default function Kezdolap() {
     return szoveg.slice(0, max - 3) + "...";
   }
 
+  async function kezeliAiKerdesKuldes(e) {
+    e.preventDefault();
+    const kerdes = aiKerdes.trim();
+    if (!kerdes || aiBetolt) return;
+
+    try {
+      beallitAiBetolt(true);
+      beallitAiHiba(null);
+      beallitAiValasz("");
+
+      const nincsWebGPU =
+        typeof navigator !== "undefined" && !("gpu" in navigator);
+      if (nincsWebGPU) {
+        throw new Error(
+          "A böngésződ nem támogatja a WebGPU-t. Próbáld meg egy frissebb Chrome / Edge / Brave böngészővel."
+        );
+      }
+
+      const engine = await getWebLlmEngine((p) => {
+        if (typeof p.progress === "number") {
+          beallitAiModellToltes(true);
+          beallitAiModellProgress(Math.round(p.progress * 100));
+        }
+      });
+
+      beallitAiModellToltes(false);
+
+      const messages = [
+        {
+          role: "system",
+          content:
+"Te egy 'MakettMester AI' nevű segítő vagy. Magyarul válaszolsz, tegezel. " +
+"Kezdő és haladó makettezőknek segítesz: festés, ragasztás, csiszolás, panelvonalak, diorámák. " +
+"Mindig adj konkrét, lépésről lépésre tippeket, említs meg gyakori hibákat és azok elkerülését. " +
+"Válaszaid legyenek rövidek (3–5 mondat), de informatívak. Ha valamiben nem vagy biztos, írd le, hogy bizonytalan vagy."
+
+        },
+        {
+          role: "user",
+          content: kerdes,
+        },
+      ];
+
+      const reply = await engine.chat.completions.create({
+        messages,
+      });
+
+      const text =
+        reply?.choices?.[0]?.message?.content ||
+        "Nem sikerült most értelmes választ adnom.";
+
+      beallitAiValasz(text);
+    } catch (err) {
+      console.error(err);
+      beallitAiHiba(err.message || "Nem sikerült választ kapni.");
+    } finally {
+      beallitAiBetolt(false);
+    }
+  }
+
   return (
     <section className="page">
       <h1>Üdv a makettező klub oldalán!</h1>
 
-      {/* Összefoglaló statisztika */}
       <div className="card">
         <h2>Összefoglaló</h2>
         <p>
@@ -86,7 +151,6 @@ export default function Kezdolap() {
         </p>
       </div>
 
-      {/* Top 3 makett box */}
       <div className="card">
         <h2>Legjobbra értékelt makettek</h2>
         {topMakettek.length === 0 ? (
@@ -119,7 +183,6 @@ export default function Kezdolap() {
         )}
       </div>
 
-      {/* Legutóbbi vélemények */}
       <div className="card">
         <h2>Legutóbbi vélemények</h2>
         {legutobbiVelemenyek.length === 0 ? (
@@ -154,7 +217,8 @@ export default function Kezdolap() {
                       <em>{v.makett_nev}</em> makettről
                     </span>
                     <span style={{ whiteSpace: "nowrap" }}>
-                      {v.ertekeles} / 5 <CsillagokKicsi ertek={v.ertekeles} />
+                      {v.ertekeles} / 5{" "}
+                      <CsillagokKicsi ertek={v.ertekeles} />
                     </span>
                   </div>
                   <p className="small">{roviditSzoveg(v.szoveg)}</p>
@@ -167,6 +231,47 @@ export default function Kezdolap() {
               );
             })}
           </ul>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>Gyors kérdés a MakettMester AI-tól</h2>
+        <p className="small">
+          Írj be egy rövid kérdést makettezésről (festék, ragasztó, technika,
+          tipp kezdőknek), és az AI rövid választ ad.
+        </p>
+
+        {aiHiba && <p className="error">{aiHiba}</p>}
+
+        {aiModellToltes && (
+          <p className="small">
+            Modell betöltése... {aiModellProgress}% (első használatkor kicsit
+            tovább tarthat)
+          </p>
+        )}
+
+        <form className="form" onSubmit={kezeliAiKerdesKuldes}>
+          <label>
+            Kérdés
+            <input
+              type="text"
+              value={aiKerdes}
+              onChange={(e) => beallitAiKerdes(e.target.value)}
+              placeholder="Pl.: Milyen festéket ajánlasz 1:35-ös harckocsihoz?"
+            />
+          </label>
+          <button type="submit" className="btn" disabled={aiBetolt}>
+            {aiBetolt ? "Gondolkodom..." : "Kérdezek"}
+          </button>
+        </form>
+
+        {aiValasz && (
+          <div className="card" style={{ marginTop: 12 }}>
+            <p className="small">
+              <strong>MakettMester AI válasza:</strong>
+            </p>
+            <p>{aiValasz}</p>
+          </div>
         )}
       </div>
 
