@@ -181,7 +181,25 @@ INSERT INTO `makett` (`id`, `nev`, `gyarto`, `kategoria`, `skala`, `nehezseg`, `
 (9, 'Sherman M4A3', 'Asuka', 'harckocsi', '1:35', 3, 2016, NULL),
 (10, 'HMS Hood', 'Trumpeter', 'hajó', '1:350', 4, 2016, NULL),
 (11, 'KV-2 nehézharckocsi', 'Trumpeter', 'harckocsi', '1:35', 2, 2018, NULL),
-(12, 'Spitfire Mk Vb', 'Airfix', 'repülő', '1:72', 1, 2015, NULL);
+(12, 'Spitfire Mk Vb', 'Airfix', 'repülő', '1:72', 1, 2015, NULL),
+(13, 'Gundam Aerial HG', 'Bandai', 'mecha', '1:144', 1, 2022, NULL),
+(14, 'Gunda Aerial Rebuild HG', 'Bandai', 'mecha', '1:144', 1, 2023, NULL),
+(15, 'Gundam 00 Seven Sword/G HG', 'Bandai', 'mecha', '1:144', 1, 20, NULL),
+(16, 'Gundam 00 Seven Sword/G', 'Bandai', 'mecha', '1:100', 2, 20, NULL),
+(17, 'Gundam Virtue', 'Bandai', 'mecha', '1:144', 1, 2007, NULL),
+(18, 'MBF-02 Strike Rouge EG', 'Bandai', 'mecha', '1:144', 1, 2025, NULL),
+(19, 'Gundam Dynames HG', 'Bandai', 'mecha', '1:144', 1, 2007, NULL),
+(20, 'Lightning Buster Gundam HG', 'Bandai', 'mecha', '1:144', 1, 2024, NULL),
+(21, 'HMS Prince of Wlaes', 'Tamiya', 'hajó', '1:350', 3, 1986, NULL),
+(22, 'HMS Dreadnought 1907', 'Trumpeter', 'hajó', '1:350', 3, 20, NULL),
+(23, 'HMS Dreadnought 1918', 'Trumpeter', 'hajó', '1:350', 3, 20, NULL),
+(24, 'HMS Abercrombie', 'Trumpeter', 'hajó', '1:350', 6, 20, NULL),
+(25, '', '', '', '', 1, 20, NULL),
+(26, '', '', '', '', 1, 20, NULL),
+(27, '', '', '', '', 1, 20, NULL),
+(28, '', '', '', '', 1, 20, NULL),
+(29, '', '', '', '', 1, 20, NULL),
+(30, '', '', '', '', 1, 20, NULL);
 
 -- --------------------------------------------------------
 
