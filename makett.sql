@@ -167,6 +167,7 @@ CREATE TABLE `makett` (
 
 --
 -- A tábla adatainak kiíratása `makett`
+-- minta (id, 'nev', 'gyarto', 'kategoria', 'skala', nehezseg, kiadas, NULL),
 --
 
 INSERT INTO `makett` (`id`, `nev`, `gyarto`, `kategoria`, `skala`, `nehezseg`, `megjelenes_eve`, `kep_url`) VALUES
@@ -184,8 +185,8 @@ INSERT INTO `makett` (`id`, `nev`, `gyarto`, `kategoria`, `skala`, `nehezseg`, `
 (12, 'Spitfire Mk Vb', 'Airfix', 'repülő', '1:72', 1, 2015, NULL),
 (13, 'Gundam Aerial HG', 'Bandai', 'mecha', '1:144', 1, 2022, NULL),
 (14, 'Gunda Aerial Rebuild HG', 'Bandai', 'mecha', '1:144', 1, 2023, NULL),
-(15, 'Gundam 00 Seven Sword/G HG', 'Bandai', 'mecha', '1:144', 1, 20, NULL),
-(16, 'Gundam 00 Seven Sword/G', 'Bandai', 'mecha', '1:100', 2, 20, NULL),
+(15, 'Gundam 00 Seven Sword/G HG', 'Bandai', 'mecha', '1:144', 1, 2010, NULL),
+(16, 'Gundam 00 Seven Sword/G MG', 'Bandai', 'mecha', '1:100', 2, 2011, NULL),
 (17, 'Gundam Virtue', 'Bandai', 'mecha', '1:144', 1, 2007, NULL),
 (18, 'MBF-02 Strike Rouge EG', 'Bandai', 'mecha', '1:144', 1, 2025, NULL),
 (19, 'Gundam Dynames HG', 'Bandai', 'mecha', '1:144', 1, 2007, NULL),
@@ -195,11 +196,16 @@ INSERT INTO `makett` (`id`, `nev`, `gyarto`, `kategoria`, `skala`, `nehezseg`, `
 (23, 'HMS Dreadnought 1918', 'Trumpeter', 'hajó', '1:350', 3, 20, NULL),
 (24, 'HMS Abercrombie', 'Trumpeter', 'hajó', '1:350', 6, 20, NULL),
 (25, 'HMS Agincourt', 'FlyHawk', 'hajó', '1:700', 6, 20, NULL),
-(26, 'E-75 Standardpanzer', 'Trumpeter', 'tank', '1:35', 3, 2010, NULL),
-(27, 'Churchil Mk VII', 'Tamiya', 'tank', '1:35', 1, 1996, NULL),
-(28, 'Tiger I', 'Tamiya', 'tank', '1:35', 2, 20, NULL),
-(29, 'SU-152', 'Trumpeter', 'tank', '1:35', 1, 20, NULL),
-(30, 'E-100 nehézharckocsi', 'Trumpeter', 'tank', '1:35', 2, 20, NULL);
+(26, 'E-75 Standardpanzer', 'Trumpeter', 'harckocsi', '1:35', 3, 2010, NULL),
+(27, 'Churchil Mk VII', 'Tamiya', 'harckocsi', '1:35', 1, 1996, NULL),
+(28, 'Tiger I early', 'Tamiya', 'harckocsi', '1:35', 2, 20, NULL),
+(29, 'SU-152', 'Trumpeter', 'harckocsi', '1:35', 1, 20, NULL),
+(30, 'E-100 nehézharckocsi', 'Trumpeter', 'harckocsi', '1:35', 2, 2018, NULL),
+(31, 'SMS Szent István', 'Trumpeter', 'hajó', '1:350', 4, 2019, NULL),
+(32, 'HMS Rodney', 'Trumpeter', 'hajó', '1:200', 4, 2015, NULL),
+(33, 'Tiger I early motorizált', 'Tamiya', 'harckocsi', '1:16', 10, 2000, NULL),
+(34, 'M551 Sheridan', 'Tamiya', 'harckocsi', '1:16', 8, 2019, NULL),
+(id, 'Musashi', 'Tamiya', 'hajó', '1:350', 4, 2013, NULL);
 
 -- --------------------------------------------------------
 
