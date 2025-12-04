@@ -205,7 +205,7 @@ INSERT INTO `makett` (`id`, `nev`, `gyarto`, `kategoria`, `skala`, `nehezseg`, `
 (32, 'HMS Rodney', 'Trumpeter', 'hajó', '1:200', 4, 2015, NULL),
 (33, 'Tiger I early motorizált', 'Tamiya', 'harckocsi', '1:16', 10, 2000, NULL),
 (34, 'M551 Sheridan', 'Tamiya', 'harckocsi', '1:16', 8, 2019, NULL),
-(id, 'Musashi', 'Tamiya', 'hajó', '1:350', 4, 2013, NULL);
+(35, 'Musashi', 'Tamiya', 'hajó', '1:350', 4, 2013, NULL);
 
 -- --------------------------------------------------------
 
