@@ -205,7 +205,12 @@ INSERT INTO `makett` (`id`, `nev`, `gyarto`, `kategoria`, `skala`, `nehezseg`, `
 (32, 'HMS Rodney', 'Trumpeter', 'hajó', '1:200', 4, 2015, NULL),
 (33, 'Tiger I early motorizált', 'Tamiya', 'harckocsi', '1:16', 10, 2000, NULL),
 (34, 'M551 Sheridan', 'Tamiya', 'harckocsi', '1:16', 8, 2019, NULL),
-(35, 'Musashi', 'Tamiya', 'hajó', '1:350', 4, 2013, NULL);
+(35, 'IJN Musashi', 'Tamiya', 'hajó', '1:350', 4, 2013, NULL),
+(36, 'M51', 'Takom', 'harckocsi', '1:35', 4, 2025, NULL),
+(37, 'M4a1 76(W) VVSS', 'Takom', 'harckocsi', '1:35', 3, 2025, NULL),
+(38, 'M103A2', 'Takom', 'harckocsi', '1:35', 5, 2023, NULL),
+(39, 'Merkava MK1', 'Takom', 'harckocsi', '1:35', 6, 2017, NULL),
+(40, 'Panther AusfG', 'Das Werk', 'harckocsi', '1:35', 4, 2024, NULL),;
 
 -- --------------------------------------------------------
 
