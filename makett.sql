@@ -200,7 +200,7 @@ INSERT INTO `makett` (`id`, `nev`, `gyarto`, `kategoria`, `skala`, `nehezseg`, `
 (27, 'Churchil Mk VII', 'Tamiya', 'harckocsi', '1:35', 1, 1996, NULL),
 (28, 'Tiger I early', 'Tamiya', 'harckocsi', '1:35', 2, 20, NULL),
 (29, 'SU-152', 'Trumpeter', 'harckocsi', '1:35', 1, 20, NULL),
-(30, 'E-100 nehézharckocsi', 'Trumpeter', 'harckocsi', '1:35', 2, 2018, NULL),
+(30, 'E-100 nehézharckocsi Krupp toronyal', 'Trumpeter', 'harckocsi', '1:35', 2, 2018, NULL),
 (31, 'SMS Szent István', 'Trumpeter', 'hajó', '1:350', 4, 2019, NULL),
 (32, 'HMS Rodney', 'Trumpeter', 'hajó', '1:200', 4, 2015, NULL),
 (33, 'Tiger I early motorizált', 'Tamiya', 'harckocsi', '1:16', 10, 2000, NULL),
@@ -210,7 +210,12 @@ INSERT INTO `makett` (`id`, `nev`, `gyarto`, `kategoria`, `skala`, `nehezseg`, `
 (37, 'M4a1 76(W) VVSS', 'Takom', 'harckocsi', '1:35', 3, 2025, NULL),
 (38, 'M103A2', 'Takom', 'harckocsi', '1:35', 5, 2023, NULL),
 (39, 'Merkava MK1', 'Takom', 'harckocsi', '1:35', 6, 2017, NULL),
-(40, 'Panther AusfG', 'Das Werk', 'harckocsi', '1:35', 4, 2024, NULL),;
+(40, 'Panther AusfG', 'Das Werk', 'harckocsi', '1:35', 4, 2024, NULL),
+(41, 'IJN Yamato', 'Tamiya', 'hajó', '1:350', 5, 2011, NULL),
+(42, 'Jagdpanzer E-100', 'Trupeter', 'harckocsi', '1:35', 3, 2011, NULL),
+(43, 'IS-3M', 'Trumpeter', 'harckocsi', '1:35', 5, 2002, NULL),
+(44, 'IS-7', 'Trumpeter', 'harckocsi', '1:35', 4, 2014, NULL),
+(45, 'Bismarck', 'Trumpeter', 'hajó', '1:350', 7, 2020, NULL);
 
 -- --------------------------------------------------------
 
