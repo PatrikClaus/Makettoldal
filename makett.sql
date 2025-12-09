@@ -212,11 +212,20 @@ INSERT INTO `makett` (`id`, `nev`, `gyarto`, `kategoria`, `skala`, `nehezseg`, `
 (39, 'Merkava MK1', 'Takom', 'harckocsi', '1:35', 6, 2017, NULL),
 (40, 'Panther AusfG', 'Das Werk', 'harckocsi', '1:35', 4, 2024, NULL),
 (41, 'IJN Yamato', 'Tamiya', 'hajó', '1:350', 5, 2011, NULL),
-(42, 'Jagdpanzer E-100', 'Trupeter', 'harckocsi', '1:35', 3, 2011, NULL),
+(42, 'Jagdpanzer E-100', 'Trumpeter', 'harckocsi', '1:35', 3, 2011, NULL),
 (43, 'IS-3M', 'Trumpeter', 'harckocsi', '1:35', 5, 2002, NULL),
 (44, 'IS-7', 'Trumpeter', 'harckocsi', '1:35', 4, 2014, NULL),
-(45, 'Bismarck', 'Trumpeter', 'hajó', '1:350', 7, 2020, NULL);
-
+(45, 'Bismarck', 'Trumpeter', 'hajó', '1:350', 7, 2020, NULL),
+(46, 'HMS Ark Royal', 'Airfix', 'hajó', '1:600', 4, 2018, NULL),
+(47, 'Sherman Firefly', 'Airfix', 'harckocsi', '1:35', 1, 2024, NULL),
+(48, 'Aichi B7A1/B7A2 Ryusei', 'Fujimi', 'repülő', '1:72', 5, 2019, NULL),
+(49, 'T-34/85 Zavod 112 - 1944', 'Italeri', 'harckocsi', '1:35', 4, 2025, NULL),
+(50, 'Crusader III AA Mk.I', 'Italeri', 'harckocsi', '1:35', 3, 2008, NULL),
+(51, 'AMS-119 Geara Doga HG', 'Bandai', 'mecha', '1:144', 2, 2008, NULL),
+(52, 'Mobile Suit F71', 'Bandai', 'mecha', '1:144', 5, 1990, NULL),
+(53, 'AMX-107 Bawoo HG', 'Bandai', 'mecha', '1:144', 2, 2002, NULL),
+(54, 'M4A3 75(W) ETO', 'Dragon', 'harckocsi', '1:35', 4, 2024, NULL),
+(55, 'Churchill Mk.III', 'Italeri', 'harckocsi', '1:72', 5, 2021, NULL),;
 -- --------------------------------------------------------
 
 --
