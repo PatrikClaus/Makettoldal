@@ -125,6 +125,22 @@ body {
   flex-shrink: 0;        /* ne lapuljon össze */
 }
 
+/* Inicialos avatar a navbarban (ha nincs kép) */
+.nav-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: #1f2937;
+  color: #f9fafb;
+  flex-shrink: 0;
+}
+
 .nav-btn {
   padding: 4px 12px;
   border-radius: 999px;
@@ -193,6 +209,32 @@ h3 {
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+/* Egyes oldalak (Makettek / Kedvencek) ezt a nevet használják */
+.card-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.makett-card h2 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+}
+
+.makett-kep-wrapper {
+  margin-top: 10px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #1f2937;
+}
+
+.makett-kep {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
 }
 
 .card-header {
@@ -650,4 +692,38 @@ h3 {
 .ai-msg-bot {
   margin-right: auto;
   background: #111827;
+}
+
+/* === Makett beküldés / jóváhagyás extra UI === */
+
+.notice {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  background: rgba(2, 6, 23, 0.6);
+  color: var(--text);
+}
+
+.notice.success {
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.notice.error {
+  border-color: rgba(220, 38, 38, 0.6);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid #1f2937;
+  background: rgba(17, 24, 39, 0.7);
+  color: var(--text-soft);
+}
+
+.chip-wait {
+  border-color: rgba(249, 115, 22, 0.45);
 }

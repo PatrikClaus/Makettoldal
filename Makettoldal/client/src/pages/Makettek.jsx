@@ -31,15 +31,13 @@ export default function Makettek() {
   const {
     makettek,
     velemenyek,
-    betoltAlapAdatok,
     szamolAtlagErtekeles,
     hozzaadVelemeny,
     modositVelemeny,
     torolVelemeny,
     kedvencek,
     betoltKedvencek,
-    hozzaadKedvenc,
-    torolKedvenc,
+    valtKedvenc,
     betoltesFolyamatban,
     hiba,
   } = useAdat();
@@ -65,11 +63,6 @@ export default function Makettek() {
   const [szerkesztettErtekeles, beallitSzerkesztettErtekeles] = useState(5);
 
   const isAdmin = felhasznalo?.szerepkor_id === 2;
-
-  // Betöltés első rendernél
-  useEffect(() => {
-    betoltAlapAdatok();
-  }, [betoltAlapAdatok]);
 
   useEffect(() => {
     if (bejelentkezve) {
@@ -220,15 +213,19 @@ export default function Makettek() {
   }
 
   function makettKedvenc(makettId) {
-    if (!kedvencek) return false;
-    // lehet, hogy ID-k listája vagy objektumok listája
-    if (kedvencek.some && typeof kedvencek[0] === "object") {
-      return kedvencek.some(
-        (k) => k.makett_id === makettId || k.id === makettId
-      );
-    }
-    return kedvencek.includes(makettId);
+  if (!Array.isArray(kedvencek)) return false;
+
+  const mid = Number(makettId);
+
+  // ha objektumok listája (pl. [{makett_id: "3"}])
+  if (kedvencek.length > 0 && typeof kedvencek[0] === "object") {
+    return kedvencek.some((k) => Number(k.makett_id ?? k.id) === mid);
   }
+
+  // ha sima ID lista (pl. ["3", "5"] vagy [3, 5])
+  return kedvencek.some((id) => Number(id) === mid);
+}
+
 
   async function kezeliKedvencValtas(makettId) {
     if (!bejelentkezve) {
@@ -236,11 +233,7 @@ export default function Makettek() {
       return;
     }
     try {
-      if (makettKedvenc(makettId)) {
-        await torolKedvenc(makettId);
-      } else {
-        await hozzaadKedvenc(makettId);
-      }
+      await valtKedvenc(makettId);
     } catch (err) {
       console.error("Kedvenc váltási hiba:", err);
       alert("Hiba történt a kedvencek módosításakor.");

@@ -3,6 +3,13 @@ import { useAuth } from "../context/AuthContext";
 import { useAdat } from "../context/AdatContext";
 import { Link, useNavigate } from "react-router-dom";
 const API_BASE_URL = "http://localhost:3001/api";
+const FILE_BASE_URL = API_BASE_URL.replace(/\/api$/, "");
+
+function normalizalKepUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("/uploads/")) return FILE_BASE_URL + url;
+  return url;
+}
 function generalSzin(nev) {
   if (!nev) return "#4b5563";
   let hash = 0;
@@ -18,7 +25,7 @@ function AvatarNagy({ nev, profilKepUrl }) {
     return (
       <div className="profile-avatar-wrapper">
         <img
-          src={profilKepUrl}
+          src={normalizalKepUrl(profilKepUrl)}
           alt={`${nev || "Felhasználó"} profilképe`}
           className="profile-avatar-image"
         />
@@ -71,7 +78,7 @@ export default function Profil() {
   useEffect(() => {
     if (felhasznalo) {
       beallitNev(felhasznalo.felhasznalo_nev || "");
-      beallitProfilKepUrl(felhasznalo.profil_kep_url || "");
+      beallitProfilKepUrl(normalizalKepUrl(felhasznalo.profil_kep_url || ""));
     }
   }, [felhasznalo]);
 
@@ -106,6 +113,8 @@ export default function Profil() {
       const data = await valasz.json();
       if (data.kepUrl) {
         beallitProfilKepUrl(data.kepUrl);
+        // frissítjük az AuthContext-et + localStorage-t is, hogy a navban is megjelenjen
+        await profilFrissites({ felhasznalo_nev: nev, profil_kep_url: data.kepUrl });
       }
     }
 

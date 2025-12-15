@@ -8,8 +8,8 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-const PORT = 3001;
-const JWT_TITOK = "nagyon_titkos_jwt_kulcs";
+const PORT = Number(process.env.PORT || 3001);
+const JWT_TITOK = process.env.JWT_TITOK || "nagyon_titkos_jwt_kulcs";
 
 // --- PROFILKÉP FELTÖLTÉS --- //
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -32,16 +32,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // --- ADATBÁZIS KAPCSOLAT --- //
-const adatbazisPool = mysql.createPool({
-  host: "localhost",
-  port:"3306",
-  user: "root",
-  password: "",
-  database: "makett",
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
+const DB_HOST = process.env.DB_HOST || "localhost";
+const DB_PORT = Number(process.env.DB_PORT || 3306);
+const DB_USER = process.env.DB_USER || "root";
+const DB_PASSWORD = process.env.DB_PASSWORD || "";
+const DB_NAME = process.env.DB_NAME || "makett";
+
+let adatbazisPool = null;
 
 async function adatbazisLekeres(sql, parameterek = []) {
   const [sorok] = await adatbazisPool.query(sql, parameterek);
@@ -57,7 +54,7 @@ function generalToken(felhasznalo) {
     szerepkor_id: felhasznalo.szerepkor_id,
     profil_kep_url: felhasznalo.profil_kep_url || null,
   };
-  return jwt.sign(payload, JWT_TITOK, { expiresIn: "2h" });
+  return jwt.sign(payload, JWT_TITOK, { expiresIn: "7d" });
 }
 
 function authMiddleware(req, res, next) {
@@ -85,10 +82,32 @@ function adminMiddleware(req, res, next) {
 
 // --- ADATBÁZIS INICIALIZÁLÁS --- //
 async function inicializalAdatbazis() {
-  await adatbazisPool.query(
-    "CREATE DATABASE IF NOT EXISTS makett CHARACTER SET utf8mb4 COLLATE utf8mb4_hungarian_ci"
+  // 1) DB létrehozás olyan kapcsolattal, ami NEM várja el, hogy a DB már létezzen
+  const bootstrapPool = mysql.createPool({
+    host: DB_HOST,
+    port: DB_PORT,
+    user: DB_USER,
+    password: DB_PASSWORD,
+    waitForConnections: true,
+    connectionLimit: 2,
+  });
+
+  await bootstrapPool.query(
+    `CREATE DATABASE IF NOT EXISTS ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_hungarian_ci`
   );
-  await adatbazisPool.query("USE makett");
+  await bootstrapPool.end();
+
+  // 2) Innentől már a DB-re csatlakozunk
+  adatbazisPool = mysql.createPool({
+    host: DB_HOST,
+    port: DB_PORT,
+    user: DB_USER,
+    password: DB_PASSWORD,
+    database: DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+  });
 
   await adatbazisPool.query(`
     CREATE TABLE IF NOT EXISTS szerepkor (
@@ -118,11 +137,54 @@ async function inicializalAdatbazis() {
       skala VARCHAR(50) NOT NULL,
       nehezseg INT NOT NULL,
       megjelenes_eve INT NOT NULL,
-      kep_url VARCHAR(255) NULL
-    )
+      kep_url VARCHAR(255) NULL,
+
+      -- jóváhagyásos feltöltés mezők
+      allapot ENUM('jovahagyva','varakozik','elutasitva') NOT NULL DEFAULT 'jovahagyva',
+      bekuldo_felhasznalo_id INT NULL,
+      bekuldve DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      elbiralta_admin_id INT NULL,
+      elbiralva DATETIME NULL,
+      elutasitas_ok VARCHAR(255) NULL,
+
+      INDEX idx_makett_allapot (allapot),
+      INDEX idx_makett_bekuldve (bekuldve),
+
+      CONSTRAINT fk_makett_bekuldo FOREIGN KEY (bekuldo_felhasznalo_id) REFERENCES felhasznalo(id) ON DELETE SET NULL,
+      CONSTRAINT fk_makett_elbiralo FOREIGN KEY (elbiralta_admin_id) REFERENCES felhasznalo(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
 
-  await adatbazisPool.query(`
+  // Ha a tábla már korábban létrejött régi szerkezettel, próbáljuk "migrálni" (hibát figyelmen kívül hagyunk)
+  const probalSema = async (sql) => {
+    try {
+      await adatbazisPool.query(sql);
+    } catch (e) {
+      const msg = e?.message || "";
+      // tipikus "már létezik" hibák
+      if (
+        msg.includes("Duplicate column name") ||
+        msg.includes("Duplicate key name") ||
+        msg.includes("Duplicate foreign key constraint name") ||
+        msg.includes("already exists")
+      ) {
+        return;
+      }
+      console.warn("Séma frissítés figyelmeztetés:", msg);
+    }
+  };
+
+  await probalSema("ALTER TABLE makett ADD COLUMN allapot ENUM('jovahagyva','varakozik','elutasitva') NOT NULL DEFAULT 'jovahagyva'");
+  await probalSema("ALTER TABLE makett ADD COLUMN bekuldo_felhasznalo_id INT NULL");
+  await probalSema("ALTER TABLE makett ADD COLUMN bekuldve DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
+  await probalSema("ALTER TABLE makett ADD COLUMN elbiralta_admin_id INT NULL");
+  await probalSema("ALTER TABLE makett ADD COLUMN elbiralva DATETIME NULL");
+  await probalSema("ALTER TABLE makett ADD COLUMN elutasitas_ok VARCHAR(255) NULL");
+  await probalSema("ALTER TABLE makett ADD INDEX idx_makett_allapot (allapot)");
+  await probalSema("ALTER TABLE makett ADD INDEX idx_makett_bekuldve (bekuldve)");
+  await probalSema("ALTER TABLE makett ADD CONSTRAINT fk_makett_bekuldo FOREIGN KEY (bekuldo_felhasznalo_id) REFERENCES felhasznalo(id) ON DELETE SET NULL");
+  await probalSema("ALTER TABLE makett ADD CONSTRAINT fk_makett_elbiralo FOREIGN KEY (elbiralta_admin_id) REFERENCES felhasznalo(id) ON DELETE SET NULL");
+await adatbazisPool.query(`
     CREATE TABLE IF NOT EXISTS velemeny (
       id INT AUTO_INCREMENT PRIMARY KEY,
       makett_id INT NOT NULL,
@@ -242,7 +304,15 @@ if (demok.length === 0) {
 
 // --- APP & RATE LIMIT --- //
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://localhost:3000"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+app.options("*", cors());
+
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(express.json());
 
@@ -503,6 +573,8 @@ app.put("/api/profil", authMiddleware, async (req, res) => {
   }
 });
 
+
+
 // --- MAKETTEK --- //
 // Makettek (publikus lista + szűrés)
 app.get("/api/makettek", async (req, res) => {
@@ -519,6 +591,7 @@ app.get("/api/makettek", async (req, res) => {
     `;
 
     const feltetelek = [];
+    feltetelek.push("m.allapot = 'jovahagyva'");
     const parameterek = [];
 
     if (kategoria && kategoria !== "osszes") {
@@ -602,8 +675,8 @@ app.post("/api/makettek", authMiddleware, adminMiddleware, async (req, res) => {
 
     const eredmeny = await adatbazisLekeres(
       `INSERT INTO makett
-        (nev, gyarto, kategoria, skala, nehezseg, megjelenes_eve, kep_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        (nev, gyarto, kategoria, skala, nehezseg, megjelenes_eve, kep_url, allapot, elbiralta_admin_id, elbiralva)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'jovahagyva', ?, NOW())`,
       [
         nev.trim(),
         gyarto.trim(),
@@ -612,6 +685,7 @@ app.post("/api/makettek", authMiddleware, adminMiddleware, async (req, res) => {
         nehezsegSzam,
         evSzam,
         kep_url || null,
+        req.felhasznalo.id,
       ]
     );
 
@@ -699,6 +773,136 @@ app.put(
     }
   }
 );
+
+
+
+// --- MAKETT BEKÜLDÉS (felhasználó) + JÓVÁHAGYÁS (admin) --- //
+
+// Felhasználó beküld új makettet jóváhagyásra
+app.post("/api/makett-javaslatok", authMiddleware, async (req, res) => {
+  try {
+    let { nev, gyarto, kategoria, skala, nehezseg, megjelenes_eve, kep_url } = req.body;
+
+    if (!nev || !gyarto || !kategoria || !skala) {
+      return res.status(400).json({ uzenet: "Név, gyártó, kategória és skála kötelező." });
+    }
+
+    const nehezsegSzam = Number(nehezseg);
+    const evSzam = Number(megjelenes_eve);
+
+    if (!Number.isFinite(nehezsegSzam) || nehezsegSzam < 1 || nehezsegSzam > 5) {
+      return res.status(400).json({ uzenet: "A nehézség 1 és 5 közötti szám legyen." });
+    }
+    if (!Number.isFinite(evSzam) || evSzam < 1900 || evSzam > 2100) {
+      return res.status(400).json({ uzenet: "A megjelenés éve 1900 és 2100 közé essen." });
+    }
+
+    const eredmeny = await adatbazisLekeres(
+      `INSERT INTO makett
+        (nev, gyarto, kategoria, skala, nehezseg, megjelenes_eve, kep_url, allapot, bekuldo_felhasznalo_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'varakozik', ?)`,
+      [
+        nev.trim(),
+        gyarto.trim(),
+        kategoria.trim(),
+        skala.trim(),
+        nehezsegSzam,
+        evSzam,
+        kep_url || null,
+        req.felhasznalo.id,
+      ]
+    );
+
+    return res.status(201).json({ uzenet: "Beküldve jóváhagyásra.", id: eredmeny.insertId });
+  } catch (err) {
+    console.error("Makett javaslat hiba:", err);
+    return res.status(500).json({ uzenet: "Szerver hiba a makett beküldése során." });
+  }
+});
+
+// Saját beküldések (hogy a user lássa mi várakozik / elutasítva / jóváhagyva)
+app.get("/api/sajat/makett-javaslatok", authMiddleware, async (req, res) => {
+  try {
+    const sorok = await adatbazisLekeres(
+      `SELECT id, nev, gyarto, kategoria, skala, nehezseg, megjelenes_eve, kep_url,
+              allapot, bekuldve, elbiralva, elutasitas_ok
+       FROM makett
+       WHERE bekuldo_felhasznalo_id = ?
+       ORDER BY bekuldve DESC`,
+      [req.felhasznalo.id]
+    );
+    return res.json(sorok);
+  } catch (err) {
+    console.error("Saját makett javaslatok hiba:", err);
+    return res.status(500).json({ uzenet: "Szerver hiba a saját beküldések lekérdezése során." });
+  }
+});
+
+// Admin: függőben lévő javaslatok listája
+app.get("/api/admin/makett-javaslatok", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const sorok = await adatbazisLekeres(
+      `SELECT m.*,
+              f.felhasznalo_nev AS bekuldo_nev,
+              f.email AS bekuldo_email
+       FROM makett m
+       LEFT JOIN felhasznalo f ON f.id = m.bekuldo_felhasznalo_id
+       WHERE m.allapot = 'varakozik'
+       ORDER BY m.bekuldve DESC`
+    );
+    return res.json(sorok);
+  } catch (err) {
+    console.error("Admin makett javaslatok hiba:", err);
+    return res.status(500).json({ uzenet: "Szerver hiba az admin listánál." });
+  }
+});
+
+// Admin: jóváhagyás
+app.post("/api/admin/makett-javaslatok/:id/jovahagy", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ uzenet: "Érvénytelen azonosító." });
+
+    const eredmeny = await adatbazisLekeres(
+      `UPDATE makett
+       SET allapot='jovahagyva', elbiralta_admin_id=?, elbiralva=NOW(), elutasitas_ok=NULL
+       WHERE id=? AND allapot='varakozik'`,
+      [req.felhasznalo.id, id]
+    );
+
+    if (!eredmeny.affectedRows) return res.status(404).json({ uzenet: "Nem található függőben lévő javaslat ezzel az ID-vel." });
+
+    return res.json({ uzenet: "Jóváhagyva." });
+  } catch (err) {
+    console.error("Makett jóváhagyás hiba:", err);
+    return res.status(500).json({ uzenet: "Szerver hiba a jóváhagyás során." });
+  }
+});
+
+// Admin: elutasítás (ok opcionális)
+app.post("/api/admin/makett-javaslatok/:id/elutasit", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ uzenet: "Érvénytelen azonosító." });
+
+    const ok = (req.body?.ok || "").trim();
+
+    const eredmeny = await adatbazisLekeres(
+      `UPDATE makett
+       SET allapot='elutasitva', elbiralta_admin_id=?, elbiralva=NOW(), elutasitas_ok=?
+       WHERE id=? AND allapot='varakozik'`,
+      [req.felhasznalo.id, ok || null, id]
+    );
+
+    if (!eredmeny.affectedRows) return res.status(404).json({ uzenet: "Nem található függőben lévő javaslat ezzel az ID-vel." });
+
+    return res.json({ uzenet: "Elutasítva." });
+  } catch (err) {
+    console.error("Makett elutasítás hiba:", err);
+    return res.status(500).json({ uzenet: "Szerver hiba az elutasítás során." });
+  }
+});
+
 
 // --- VÉLEMÉNYEK --- //
 app.get("/api/velemenyek", async (req, res) => {
@@ -968,7 +1172,7 @@ app.post(
       return res.status(400).json({ uzenet: "Nincs feltöltött fájl." });
     }
 
-    const kepUrl = "/uploads/" + req.file.filename;
+    const kepUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
 
     try {
       await adatbazisLekeres(
@@ -1093,7 +1297,7 @@ app.post("/api/epitesinaplo", authMiddleware, async (req, res) => {
       [ujId]
     );
 
-    res.status(201).json(uj);
+    
   } catch (err) {
     console.error("Építési napló létrehozási hiba:", err);
     res

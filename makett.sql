@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Gép: 127.0.0.1:3307
--- Létrehozás ideje: 2025. Nov 26. 08:43
--- Kiszolgáló verziója: 10.4.28-MariaDB
--- PHP verzió: 8.2.4
+-- Gép: 127.0.0.1
+-- Létrehozás ideje: 2025. Dec 15. 21:32
+-- Kiszolgáló verziója: 10.4.32-MariaDB
+-- PHP verzió: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -67,7 +67,7 @@ CREATE TABLE `felhasznalo` (
 --
 
 INSERT INTO `felhasznalo` (`id`, `felhasznalo_nev`, `email`, `jelszo_hash`, `szerepkor_id`, `profil_kep_url`) VALUES
-(1, 'Admin', 'admin@pelda.hu', '$2a$10$2OnElbg0l8LSxiJI/RfhUeabEFSjEyIVWH1qLGF/.V0EEi6PARGwu', 2, NULL),
+(1, 'Admin', 'admin@pelda.hu', '$2a$10$2OnElbg0l8LSxiJI/RfhUeabEFSjEyIVWH1qLGF/.V0EEi6PARGwu', 2, 'http://localhost:3001/uploads/profil_1_1765825912915.jpg'),
 (2, 'Demó felhasználó', 'demo@pelda.hu', '$2a$10$n7fWUKsCtFng1h7dwJTRg.l4d3B1ql1F/sF4F.xvkPBJvuMAIS9N6', 1, NULL),
 (3, 'Bence', 'bence@pelda.hu', 'hash3', 1, NULL),
 (4, 'Lili', 'lili@pelda.hu', 'hash4', 1, NULL),
@@ -98,7 +98,8 @@ INSERT INTO `forum_tema` (`id`, `cim`, `leiras`, `kategoria`, `letrehozva`, `fel
 (1, 'Proba', 'vahsvdvhavdvzvqawzuvdvhvPEHFVVHFVHVDHSA', 'építési napló', '2025-11-24 22:00:14', 1),
 (2, 'Repülők panelozása', 'Panelek, wash technikák.', 'repülő', '2025-11-26 08:40:04', 3),
 (3, 'Hajó makettek festése', 'Maszkolás, rétegek.', 'hajó', '2025-11-26 08:40:04', 4),
-(4, 'Dioráma készítés alapjai', 'Terep, víz, hó.', 'dioráma', '2025-11-26 08:40:04', 5);
+(4, 'Dioráma készítés alapjai', 'Terep, víz, hó.', 'dioráma', '2025-11-26 08:40:04', 5),
+(5, 'fsd', 'fsd', 'általános', '2025-12-15 19:37:06', 2);
 
 -- --------------------------------------------------------
 
@@ -123,7 +124,9 @@ INSERT INTO `forum_uzenet` (`id`, `tema_id`, `felhasznalo_id`, `szoveg`, `letreh
 (2, 2, 4, 'A panelek hangsúlyozása sokat dob a végeredményen.', '2025-11-26 08:40:04'),
 (3, 3, 5, 'Hajóknál nagyon fontos a vékony réteg.', '2025-11-26 08:40:04'),
 (4, 4, 6, 'A diorámához érdemes pigmenteket használni.', '2025-11-26 08:40:04'),
-(5, 4, 7, 'A vízhez jó a kétkomponensű gyanta.', '2025-11-26 08:40:04');
+(5, 4, 7, 'A vízhez jó a kétkomponensű gyanta.', '2025-11-26 08:40:04'),
+(6, 5, 2, 'fsd', '2025-12-15 19:37:23'),
+(7, 5, 2, 'fsdfsd', '2025-12-15 19:37:43');
 
 -- --------------------------------------------------------
 
@@ -142,6 +145,8 @@ CREATE TABLE `kedvenc` (
 --
 
 INSERT INTO `kedvenc` (`felhasznalo_id`, `makett_id`, `letrehozva`) VALUES
+(1, 48, '2025-12-15 20:14:46'),
+(2, 48, '2025-12-15 19:36:23'),
 (3, 4, '2025-11-26 08:40:04'),
 (4, 7, '2025-11-26 08:40:04'),
 (5, 10, '2025-11-26 08:40:04'),
@@ -162,70 +167,77 @@ CREATE TABLE `makett` (
   `skala` varchar(50) NOT NULL,
   `nehezseg` int(11) NOT NULL,
   `megjelenes_eve` int(11) NOT NULL,
-  `kep_url` varchar(255) DEFAULT NULL
+  `kep_url` varchar(255) DEFAULT NULL,
+  `allapot` enum('jovahagyva','varakozik','elutasitva') NOT NULL DEFAULT 'jovahagyva',
+  `bekuldo_felhasznalo_id` int(11) DEFAULT NULL,
+  `bekuldve` datetime NOT NULL DEFAULT current_timestamp(),
+  `elbiralta_admin_id` int(11) DEFAULT NULL,
+  `elbiralva` datetime DEFAULT NULL,
+  `elutasitas_ok` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_hungarian_ci;
 
 --
 -- A tábla adatainak kiíratása `makett`
--- minta (id, 'nev', 'gyarto', 'kategoria', 'skala', nehezseg, kiadas, NULL),
 --
 
-INSERT INTO `makett` (`id`, `nev`, `gyarto`, `kategoria`, `skala`, `nehezseg`, `megjelenes_eve`, `kep_url`) VALUES
-(1, 'T-34/85 szovjet közepes harckocsi', 'Zvezda', 'harckocsi', '1:35', 3, 2019, NULL),
-(2, 'Bismarck csatahajó', 'Revell', 'hajó', '1:350', 4, 2015, NULL),
-(3, 'Messerschmitt Bf 109', 'Airfix', 'repülő', '1:72', 2, 2020, NULL),
-(4, 'Panther Ausf. G', 'Tamiya', 'harckocsi', '1:35', 4, 2017, NULL),
-(5, 'Tiger I Late', 'Rye Field Model', 'harckocsi', '1:35', 5, 2021, NULL),
-(6, 'USS Missouri BB-63', 'Trumpeter', 'hajó', '1:200', 5, 2018, NULL),
-(7, 'F-14 Tomcat', 'Hasegawa', 'repülő', '1:48', 3, 2022, NULL),
-(8, 'P-51 Mustang', 'Tamiya', 'repülő', '1:48', 2, 2019, NULL),
-(9, 'Sherman M4A3', 'Asuka', 'harckocsi', '1:35', 3, 2016, NULL),
-(10, 'HMS Hood', 'Trumpeter', 'hajó', '1:350', 4, 2016, NULL),
-(11, 'KV-2 nehézharckocsi', 'Trumpeter', 'harckocsi', '1:35', 2, 2018, NULL),
-(12, 'Spitfire Mk Vb', 'Airfix', 'repülő', '1:72', 1, 2015, NULL),
-(13, 'Gundam Aerial HG', 'Bandai', 'mecha', '1:144', 1, 2022, NULL),
-(14, 'Gunda Aerial Rebuild HG', 'Bandai', 'mecha', '1:144', 1, 2023, NULL),
-(15, 'Gundam 00 Seven Sword/G HG', 'Bandai', 'mecha', '1:144', 1, 2010, NULL),
-(16, 'Gundam 00 Seven Sword/G MG', 'Bandai', 'mecha', '1:100', 2, 2011, NULL),
-(17, 'Gundam Virtue', 'Bandai', 'mecha', '1:144', 1, 2007, NULL),
-(18, 'MBF-02 Strike Rouge EG', 'Bandai', 'mecha', '1:144', 1, 2025, NULL),
-(19, 'Gundam Dynames HG', 'Bandai', 'mecha', '1:144', 1, 2007, NULL),
-(20, 'Lightning Buster Gundam HG', 'Bandai', 'mecha', '1:144', 1, 2024, NULL),
-(21, 'HMS Prince of Wlaes', 'Tamiya', 'hajó', '1:350', 3, 1986, NULL),
-(22, 'HMS Dreadnought 1907', 'Trumpeter', 'hajó', '1:350', 3, 20, NULL),
-(23, 'HMS Dreadnought 1918', 'Trumpeter', 'hajó', '1:350', 3, 20, NULL),
-(24, 'HMS Abercrombie', 'Trumpeter', 'hajó', '1:350', 6, 20, NULL),
-(25, 'HMS Agincourt', 'FlyHawk', 'hajó', '1:700', 6, 20, NULL),
-(26, 'E-75 Standardpanzer', 'Trumpeter', 'harckocsi', '1:35', 3, 2010, NULL),
-(27, 'Churchil Mk VII', 'Tamiya', 'harckocsi', '1:35', 1, 1996, NULL),
-(28, 'Tiger I early', 'Tamiya', 'harckocsi', '1:35', 2, 20, NULL),
-(29, 'SU-152', 'Trumpeter', 'harckocsi', '1:35', 1, 20, NULL),
-(30, 'E-100 nehézharckocsi Krupp toronyal', 'Trumpeter', 'harckocsi', '1:35', 2, 2018, NULL),
-(31, 'SMS Szent István', 'Trumpeter', 'hajó', '1:350', 4, 2019, NULL),
-(32, 'HMS Rodney', 'Trumpeter', 'hajó', '1:200', 4, 2015, NULL),
-(33, 'Tiger I early motorizált', 'Tamiya', 'harckocsi', '1:16', 10, 2000, NULL),
-(34, 'M551 Sheridan', 'Tamiya', 'harckocsi', '1:16', 8, 2019, NULL),
-(35, 'IJN Musashi', 'Tamiya', 'hajó', '1:350', 4, 2013, NULL),
-(36, 'M51', 'Takom', 'harckocsi', '1:35', 4, 2025, NULL),
-(37, 'M4a1 76(W) VVSS', 'Takom', 'harckocsi', '1:35', 3, 2025, NULL),
-(38, 'M103A2', 'Takom', 'harckocsi', '1:35', 5, 2023, NULL),
-(39, 'Merkava MK1', 'Takom', 'harckocsi', '1:35', 6, 2017, NULL),
-(40, 'Panther AusfG', 'Das Werk', 'harckocsi', '1:35', 4, 2024, NULL),
-(41, 'IJN Yamato', 'Tamiya', 'hajó', '1:350', 5, 2011, NULL),
-(42, 'Jagdpanzer E-100', 'Trumpeter', 'harckocsi', '1:35', 3, 2011, NULL),
-(43, 'IS-3M', 'Trumpeter', 'harckocsi', '1:35', 5, 2002, NULL),
-(44, 'IS-7', 'Trumpeter', 'harckocsi', '1:35', 4, 2014, NULL),
-(45, 'Bismarck', 'Trumpeter', 'hajó', '1:350', 7, 2020, NULL),
-(46, 'HMS Ark Royal', 'Airfix', 'hajó', '1:600', 4, 2018, NULL),
-(47, 'Sherman Firefly', 'Airfix', 'harckocsi', '1:35', 1, 2024, NULL),
-(48, 'Aichi B7A1/B7A2 Ryusei', 'Fujimi', 'repülő', '1:72', 5, 2019, NULL),
-(49, 'T-34/85 Zavod 112 - 1944', 'Italeri', 'harckocsi', '1:35', 4, 2025, NULL),
-(50, 'Crusader III AA Mk.I', 'Italeri', 'harckocsi', '1:35', 3, 2008, NULL),
-(51, 'AMS-119 Geara Doga HG', 'Bandai', 'mecha', '1:144', 2, 2008, NULL),
-(52, 'Mobile Suit F71', 'Bandai', 'mecha', '1:144', 5, 1990, NULL),
-(53, 'AMX-107 Bawoo HG', 'Bandai', 'mecha', '1:144', 2, 2002, NULL),
-(54, 'M4A3 75(W) ETO', 'Dragon', 'harckocsi', '1:35', 4, 2024, NULL),
-(55, 'Churchill Mk.III', 'Italeri', 'harckocsi', '1:72', 5, 2021, NULL),;
+INSERT INTO `makett` (`id`, `nev`, `gyarto`, `kategoria`, `skala`, `nehezseg`, `megjelenes_eve`, `kep_url`, `allapot`, `bekuldo_felhasznalo_id`, `bekuldve`, `elbiralta_admin_id`, `elbiralva`, `elutasitas_ok`) VALUES
+(1, 'T-34/85 szovjet közepes harckocsi', 'Zvezda', 'harckocsi', '1:35', 3, 2019, 'https://www.super-hobby.hu/zdjecia/0/8/3/23688_rd.jpg', 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(2, 'Bismarck csatahajó', 'Revell', 'hajó', '1:350', 4, 2015, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(3, 'Messerschmitt Bf 109', 'Airfix', 'repülő', '1:72', 2, 2020, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(4, 'Panther Ausf. G', 'Tamiya', 'harckocsi', '1:35', 4, 2017, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(5, 'Tiger I Late', 'Rye Field Model', 'harckocsi', '1:35', 5, 2021, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(6, 'USS Missouri BB-63', 'Trumpeter', 'hajó', '1:200', 5, 2018, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(7, 'F-14 Tomcat', 'Hasegawa', 'repülő', '1:48', 3, 2022, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(8, 'P-51 Mustang', 'Tamiya', 'repülő', '1:48', 2, 2019, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(9, 'Sherman M4A3', 'Asuka', 'harckocsi', '1:35', 3, 2016, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(10, 'HMS Hood', 'Trumpeter', 'hajó', '1:350', 4, 2016, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(11, 'KV-2 nehézharckocsi', 'Trumpeter', 'harckocsi', '1:35', 2, 2018, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(12, 'Spitfire Mk Vb', 'Airfix', 'repülő', '1:72', 1, 2015, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(13, 'Gundam Aerial HG', 'Bandai', 'mecha', '1:144', 1, 2022, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(14, 'Gunda Aerial Rebuild HG', 'Bandai', 'mecha', '1:144', 1, 2023, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(15, 'Gundam 00 Seven Sword/G HG', 'Bandai', 'mecha', '1:144', 1, 2010, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(16, 'Gundam 00 Seven Sword/G MG', 'Bandai', 'mecha', '1:100', 2, 2011, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(17, 'Gundam Virtue', 'Bandai', 'mecha', '1:144', 1, 2007, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(18, 'MBF-02 Strike Rouge EG', 'Bandai', 'mecha', '1:144', 1, 2025, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(19, 'Gundam Dynames HG', 'Bandai', 'mecha', '1:144', 1, 2007, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(20, 'Lightning Buster Gundam HG', 'Bandai', 'mecha', '1:144', 1, 2024, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(21, 'HMS Prince of Wlaes', 'Tamiya', 'hajó', '1:350', 3, 1986, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(22, 'HMS Dreadnought 1907', 'Trumpeter', 'hajó', '1:350', 3, 20, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(23, 'HMS Dreadnought 1918', 'Trumpeter', 'hajó', '1:350', 3, 20, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(24, 'HMS Abercrombie', 'Trumpeter', 'hajó', '1:350', 6, 20, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(25, 'HMS Agincourt', 'FlyHawk', 'hajó', '1:700', 6, 20, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(26, 'E-75 Standardpanzer', 'Trumpeter', 'harckocsi', '1:35', 3, 2010, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(27, 'Churchil Mk VII', 'Tamiya', 'harckocsi', '1:35', 1, 1996, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(28, 'Tiger I early', 'Tamiya', 'harckocsi', '1:35', 2, 20, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(29, 'SU-152', 'Trumpeter', 'harckocsi', '1:35', 1, 20, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(30, 'E-100 nehézharckocsi Krupp toronyal', 'Trumpeter', 'harckocsi', '1:35', 2, 2018, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(31, 'SMS Szent István', 'Trumpeter', 'hajó', '1:350', 4, 2019, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(32, 'HMS Rodney', 'Trumpeter', 'hajó', '1:200', 4, 2015, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(33, 'Tiger I early motorizált', 'Tamiya', 'harckocsi', '1:16', 10, 2000, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(34, 'M551 Sheridan', 'Tamiya', 'harckocsi', '1:16', 8, 2019, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(35, 'IJN Musashi', 'Tamiya', 'hajó', '1:350', 4, 2013, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(36, 'M51', 'Takom', 'harckocsi', '1:35', 4, 2025, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(37, 'M4a1 76(W) VVSS', 'Takom', 'harckocsi', '1:35', 3, 2025, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(38, 'M103A2', 'Takom', 'harckocsi', '1:35', 5, 2023, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(39, 'Merkava MK1', 'Takom', 'harckocsi', '1:35', 6, 2017, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(40, 'Panther AusfG', 'Das Werk', 'harckocsi', '1:35', 4, 2024, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(41, 'IJN Yamato', 'Tamiya', 'hajó', '1:350', 5, 2011, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(42, 'Jagdpanzer E-100', 'Trumpeter', 'harckocsi', '1:35', 3, 2011, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(43, 'IS-3M', 'Trumpeter', 'harckocsi', '1:35', 5, 2002, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(44, 'IS-7', 'Trumpeter', 'harckocsi', '1:35', 4, 2014, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(45, 'Bismarck', 'Trumpeter', 'hajó', '1:350', 7, 2020, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(46, 'HMS Ark Royal', 'Airfix', 'hajó', '1:600', 4, 2018, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(47, 'Sherman Firefly', 'Airfix', 'harckocsi', '1:35', 1, 2024, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(48, 'Aichi B7A1/B7A2 Ryusei', 'Fujimi', 'repülő', '1:72', 5, 2019, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(49, 'T-34/85 Zavod 112 - 1944', 'Italeri', 'harckocsi', '1:35', 4, 2025, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(50, 'Crusader III AA Mk.I', 'Italeri', 'harckocsi', '1:35', 3, 2008, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(51, 'AMS-119 Geara Doga HG', 'Bandai', 'mecha', '1:144', 2, 2008, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(52, 'Mobile Suit F71', 'Bandai', 'mecha', '1:144', 5, 1990, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(53, 'AMX-107 Bawoo HG', 'Bandai', 'mecha', '1:144', 2, 2002, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(54, 'M4A3 75(W) ETO', 'Dragon', 'harckocsi', '1:35', 4, 2024, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(55, 'Churchill Mk.III', 'Italeri', 'harckocsi', '1:72', 5, 2021, NULL, 'jovahagyva', NULL, '2025-12-15 19:57:10', NULL, NULL, NULL),
+(56, 'cas', 'csa', 'harckocsi', '1:35', 4, 2025, NULL, 'jovahagyva', 2, '2025-12-15 20:07:17', 1, '2025-12-15 20:08:34', NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -269,7 +281,8 @@ INSERT INTO `velemeny` (`id`, `makett_id`, `felhasznalo_id`, `szoveg`, `ertekele
 (4, 5, 4, 'Kicsit nehéz, de látványos.', 4, '2025-11-26 08:40:04'),
 (5, 7, 5, 'Nagyon jó matricalap.', 5, '2025-11-26 08:40:04'),
 (6, 8, 6, 'Gyorsan összerakható készlet.', 4, '2025-11-26 08:40:04'),
-(7, 10, 7, 'Szép kidolgozás, de időigényes.', 4, '2025-11-26 08:40:04');
+(7, 10, 7, 'Szép kidolgozás, de időigényes.', 4, '2025-11-26 08:40:04'),
+(8, 48, 2, 'nagyon jó', 5, '2025-12-15 19:38:23');
 
 --
 -- Indexek a kiírt táblákhoz
@@ -317,7 +330,11 @@ ALTER TABLE `kedvenc`
 -- A tábla indexei `makett`
 --
 ALTER TABLE `makett`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_makett_bekuldo` (`bekuldo_felhasznalo_id`),
+  ADD KEY `fk_makett_elbiralo` (`elbiralta_admin_id`),
+  ADD KEY `idx_makett_allapot` (`allapot`),
+  ADD KEY `idx_makett_bekuldve` (`bekuldve`);
 
 --
 -- A tábla indexei `szerepkor`
@@ -354,19 +371,19 @@ ALTER TABLE `felhasznalo`
 -- AUTO_INCREMENT a táblához `forum_tema`
 --
 ALTER TABLE `forum_tema`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT a táblához `forum_uzenet`
 --
 ALTER TABLE `forum_uzenet`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT a táblához `makett`
 --
 ALTER TABLE `makett`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
 -- AUTO_INCREMENT a táblához `szerepkor`
@@ -378,7 +395,7 @@ ALTER TABLE `szerepkor`
 -- AUTO_INCREMENT a táblához `velemeny`
 --
 ALTER TABLE `velemeny`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- Megkötések a kiírt táblákhoz
@@ -416,6 +433,13 @@ ALTER TABLE `forum_uzenet`
 ALTER TABLE `kedvenc`
   ADD CONSTRAINT `fk_kedvenc_felhasznalo` FOREIGN KEY (`felhasznalo_id`) REFERENCES `felhasznalo` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_kedvenc_makett` FOREIGN KEY (`makett_id`) REFERENCES `makett` (`id`) ON DELETE CASCADE;
+
+--
+-- Megkötések a táblához `makett`
+--
+ALTER TABLE `makett`
+  ADD CONSTRAINT `fk_makett_bekuldo` FOREIGN KEY (`bekuldo_felhasznalo_id`) REFERENCES `felhasznalo` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_makett_elbiralo` FOREIGN KEY (`elbiralta_admin_id`) REFERENCES `felhasznalo` (`id`) ON DELETE SET NULL;
 
 --
 -- Megkötések a táblához `velemeny`

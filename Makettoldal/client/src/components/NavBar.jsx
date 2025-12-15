@@ -3,12 +3,18 @@ import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function AvatarKicsi({ nev, profilKepUrl }) {
+  const normalizal = (url) => {
+    if (!url) return "";
+    if (url.startsWith("/uploads/")) return `http://localhost:3001${url}`;
+    return url;
+  };
+
   if (profilKepUrl) {
     return (
       <img
-        src={profilKepUrl}
+        src={normalizal(profilKepUrl)}
         alt={`${nev || "Felhasználó"} profilképe`}
-        className="avatar avatar-small"
+        className="nav-avatar-img"
       />
     );
   }
@@ -20,15 +26,13 @@ function AvatarKicsi({ nev, profilKepUrl }) {
     .toUpperCase();
 
   return (
-    <div className="avatar avatar-small">
-      {kezdobetuk}
-    </div>
+    <div className="nav-avatar">{kezdobetuk}</div>
   );
 }
 export default function NavBar() {
   const { felhasznalo, kijelentkezes } = useAuth();
   const bejelentkezve = !!felhasznalo;
-  const admin = felhasznalo?.admin || false;
+  const admin = felhasznalo?.szerepkor_id === 2;
 
   return (
     <header className="nav">
@@ -45,6 +49,11 @@ export default function NavBar() {
             <NavLink to="/kedvencek" className="nav-link">Kedvenceim</NavLink>
             <NavLink to="/velemenyeim" className="nav-link">Véleményeim</NavLink>
             <NavLink to="/epitesinaplo" className="nav-link">Építési napló</NavLink>
+            <NavLink to="/makett-bekuldes" className="nav-link">Makett beküldés</NavLink>
+            {admin && (
+            <NavLink to="/admin/makett-jovahagyas" className="nav-link">Jóváhagyás</NavLink>
+)}
+
           </>
         )}
 

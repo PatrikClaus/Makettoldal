@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 const AdatContext = createContext(null);
 const API_BASE_URL = "http://localhost:3001/api";
@@ -10,7 +10,7 @@ export function AdatProvider({ children }) {
   const [betoltesFolyamatban, beallitBetoltes] = useState(false);
   const [hiba, beallitHiba] = useState(null);
 
-  async function betoltAlapAdatok() {
+  const betoltAlapAdatok = useCallback(async () => {
     try {
       beallitBetoltes(true);
       beallitHiba(null);
@@ -35,11 +35,11 @@ export function AdatProvider({ children }) {
     } finally {
       beallitBetoltes(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     betoltAlapAdatok();
-  }, []);
+  }, [betoltAlapAdatok]);
 
   function szamolAtlagErtekeles(makettId) {
     const lista = velemenyek.filter((v) => v.makett_id === makettId);
@@ -123,7 +123,7 @@ export function AdatProvider({ children }) {
     beallitVelemenyek((elozo) => elozo.filter((v) => v.id !== velemenyId));
   }
 
-  async function betoltKedvencek() {
+  const betoltKedvencek = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       beallitKedvencek([]);
@@ -142,34 +142,34 @@ export function AdatProvider({ children }) {
     }
 
     const adat = await valasz.json();
-    beallitKedvencek(adat.map((k) => k.makett_id));
+    beallitKedvencek(adat.map((k) => Number(k.makett_id)));
+  }, []);
+
+const valtKedvenc = useCallback(async (makettId) => {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Be kell jelentkezned a kedvencek kezeléséhez.");
+
+  const mid = Number(makettId);
+  const kedvenc = kedvencek.some((id) => Number(id) === mid);
+  const url = `${API_BASE_URL}/kedvencek/${mid}`;
+
+  const valasz = await fetch(url, {
+    method: kedvenc ? "DELETE" : "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!valasz.ok) {
+    const hiba = await valasz.json().catch(() => ({}));
+    throw new Error(hiba.uzenet || "Hiba a kedvencek módosításakor.");
   }
 
-  async function valtKedvenc(makettId) {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Be kell jelentkezned a kedvencek kezeléséhez.");
-    }
+  beallitKedvencek((elozo) =>
+    kedvenc
+      ? elozo.filter((id) => Number(id) !== mid)
+      : [...new Set([...elozo.map(Number), mid])]
+  );
+}, [kedvencek]);
 
-    const kedvenc = kedvencek.includes(makettId);
-    const url = `${API_BASE_URL}/kedvencek/${makettId}`;
-
-    const valasz = await fetch(url, {
-      method: kedvenc ? "DELETE" : "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!valasz.ok) {
-      const hiba = await valasz.json().catch(() => ({}));
-      throw new Error(hiba.uzenet || "Hiba a kedvencek módosításakor.");
-    }
-
-    beallitKedvencek((elozo) =>
-      kedvenc ? elozo.filter((id) => id !== makettId) : [...elozo, makettId]
-    );
-  }
 
   const ertek = {
     makettek,
