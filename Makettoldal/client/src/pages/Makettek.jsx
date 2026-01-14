@@ -50,7 +50,7 @@ export default function Makettek() {
   const [kereses, beallitKereses] = useState("");
   const [minAtlagErtekeles, beallitMinAtlagErtekeles] = useState(0);
   const [rendezes, beallitRendezes] = useState("nev");
-
+  const [modalMakett, setModalMakett] = useState(null);
   // Vélemények / kedvencek UI state
   const [kivalasztottMakettId, beallitKivalasztottMakettId] = useState(null);
 
@@ -324,7 +324,7 @@ export default function Makettek() {
             const velemenyLista = makettVelemenyek(m.id);
             const nyitva = kivalasztottMakettId === m.id;
             const kedvenc = makettKedvenc(m.id);
-
+            
             return (
               <article key={m.id} className="card makett-card">
                 <div className="makett-fejlec">
@@ -348,7 +348,7 @@ export default function Makettek() {
                 </div>
 
                 {m.kep_url && (
-                  <div className="makett-kep-wrapper">
+                  <div className="makett-kep-wrapper" onClick={() => setModalMakett(m)}>
                     <img
                       src={m.kep_url}
                       alt={m.nev}
@@ -532,6 +532,32 @@ export default function Makettek() {
           })
         )}
       </section>
+      {modalMakett && (
+  <div className="modal-overlay" onClick={() => setModalMakett(null)}>
+    <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <h2>{modalMakett.nev}</h2>
+
+      <img
+        src={modalMakett.kep_url}
+        alt={modalMakett.nev}
+        className="modal-kep"
+      />
+
+      <p><strong>Gyártó:</strong> {modalMakett.gyarto}</p>
+      <p><strong>Skála:</strong> {modalMakett.skala}</p>
+      <p><strong>Kategória:</strong> {modalMakett.kategoria}</p>
+      <p><strong>Nehézség:</strong> {modalMakett.nehezseg}/5</p>
+
+      <button
+        className="btn"
+        onClick={() => setModalMakett(null)}
+      >
+        Bezárás
+      </button>
+    </div>
+  </div>
+)}
+
     </section>
   );
 }
