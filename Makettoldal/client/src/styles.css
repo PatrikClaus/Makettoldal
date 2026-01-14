@@ -488,26 +488,26 @@ h3 {
   gap: 4px;
   margin-top: 4px;
 }
-
-.star-btn {
+.rating-stars .star {
   background: transparent;
   border: none;
   cursor: pointer;
   font-size: 20px;
-  line-height: 1;
-  padding: 0;
+  padding: 2px 4px;
+  border-radius: 6px;
   color: #6b7280;
-  transition: transform 0.1s ease, color 0.15s ease,
-    text-shadow 0.15s ease;
+  transition: background-color 0.15s ease, transform 0.1s ease, color 0.15s ease;
 }
 
-.star-btn.filled {
+.rating-stars .star:hover {
+  background-color: rgba(250, 204, 21, 0.15);
+  transform: translateY(-1px);
+}
+
+.rating-stars .star.active {
   color: #facc15;
-  text-shadow: 0 0 8px rgba(250, 204, 21, 0.7);
-}
-
-.star-btn:hover {
-  transform: translateY(-1px) scale(1.05);
+  background-color: rgba(250, 204, 21, 0.2);
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.6);
 }
 
 /* Skeleton kártyák */
