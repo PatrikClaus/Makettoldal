@@ -24,7 +24,6 @@ import Footer from "./components/footer";
 
 
 // Vite: automatikusan összeszedi az ikonokat ebből a mappából
-// Ide tedd a fájlokat: src/assets/favicons/  (pl. tank.svg, ship.svg, plane.svg)
 const favModules = import.meta.glob("./assets/favicons/*.{png,ico}", {
   eager: true,
   query: "?url",
