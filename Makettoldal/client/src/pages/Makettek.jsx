@@ -22,6 +22,7 @@ export default function Makettek() {
 
   const { bejelentkezve, felhasznalo } = useAuth();
   const isAdmin = felhasznalo?.szerepkor_id === 2;
+  const API_BASE_URL = "http://localhost:3001/api";
 
   // Szűrők
   const [kategoriaSzuro, beallitKategoriaSzuro] = useState("osszes");
@@ -50,7 +51,53 @@ export default function Makettek() {
       day: "2-digit",
     });
   }
-
+  async function adminMakettUpdate(id, payload) {
+    const token = localStorage.getItem("token");
+  
+    const res = await fetch(`${API_BASE_URL}/makettek/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  
+    if (!res.ok) {
+      const h = await res.json().catch(() => ({}));
+      throw new Error(h.uzenet || "Nem sikerült menteni a makettet.");
+    }
+  
+    const updated = await res.json();
+  
+    // UX: modal frissüljön az új adatokkal
+    setModalMakett(updated);
+  
+    return updated;
+  }
+  
+  async function adminMakettDelete(id) {
+    const token = localStorage.getItem("token");
+  
+    const res = await fetch(`${API_BASE_URL}/makettek/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  
+    if (!res.ok) {
+      const h = await res.json().catch(() => ({}));
+      throw new Error(h.uzenet || "Nem sikerült törölni a makettet.");
+    }
+  
+    // UX: modal zár
+    setModalMakett(null);
+  
+    // ⚠️ Ha a lista nem frissül magától a contextből,
+    // akkor itt kell egy "betoltMakettek()" vagy hasonló hívás.
+  }
+  
   function makettVelemenyek(makettId) {
     return (velemenyek || []).filter((v) => v.makett_id === makettId);
   }
@@ -245,7 +292,11 @@ export default function Makettek() {
         hozzaadVelemeny={hozzaadVelemeny}
         modositVelemeny={modositVelemeny}
         torolVelemeny={torolVelemeny}
+        onAdminUpdate={adminMakettUpdate}
+        onAdminDelete={adminMakettDelete}
+        
       />
     </section>
+    
   );
 }
